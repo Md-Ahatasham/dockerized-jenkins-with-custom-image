@@ -4,21 +4,22 @@ FROM jenkins/jenkins:lts
 # Switch to root user to install packages
 USER root
 
-# Install Docker CLI
+# Install dependencies for Docker CLI and Docker Compose
 RUN apt-get update && \
     apt-get install -y apt-transport-https ca-certificates curl software-properties-common gnupg2 lsb-release && \
-    curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
-    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list && \
     apt-get update && \
-    apt-get install -y docker-ce-cli
+    apt-get install -y docker-ce-cli && \
+    apt-get clean
 
 # Install Docker Compose
-RUN curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")')" -o /usr/local/bin/docker-compose && \
+RUN curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
     chmod +x /usr/local/bin/docker-compose
 
-# Ensure /tmp/pear directory exists and set permissions
+# Ensure /tmp/pear directory exists and set permissions (optional fix for PHP or PEAR-related tasks)
 RUN mkdir -p /tmp/pear/download/ && \
     chmod -R 777 /tmp/pear
 
-## Switch back to the Jenkins user
+# Switch back to Jenkins user
 USER jenkins
